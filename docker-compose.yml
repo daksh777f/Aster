@@ -1,0 +1,129 @@
+services:
+  db:
+    container_name: aster-db
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${FLYWAY_PASSWORD:-postgres}
+      POSTGRES_DB: aster
+    volumes:
+      - aster-db-data:/var/lib/postgresql/data
+      - ./docker/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aster-net
+
+  migrator:
+    container_name: aster-migrator
+    image: flyway/flyway:10-alpine
+    command: >
+      -url=${FLYWAY_URL:-jdbc:postgresql://db:5432/aster}
+      -user=${FLYWAY_USER:-postgres}
+      -password=${FLYWAY_PASSWORD:-postgres}
+      -schemas=app,vector
+      -baselineOnMigrate=true
+      -connectRetries=60
+      -ignoreMigrationPatterns=*:missing
+      -placeholders.ASTER_APP_PASSWORD=${ASTER_APP_PASSWORD:-aster_app_pwd_123}
+      migrate
+    volumes:
+      - ./migrations:/flyway/sql:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - aster-net
+
+  host:
+    container_name: aster-host
+    image: aster-host
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.host
+    depends_on:
+      db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      DOCKER_HOST: unix://${DOCKER_SOCKET_PATH:-/run/user/1000/docker.sock}
+      ALLOWLIST_IMAGES_PATH: /app/config/allowlist.images
+      ALLOWLIST_URLS_PATH: /app/config/allowlist.urls
+      ALLOWLIST_PACKAGES_NPM_PATH: /app/config/allowlist.packages.npm
+      ALLOWLIST_PACKAGES_PYPI_PATH: /app/config/allowlist.packages.pypi
+      ALLOWLIST_PACKAGES_BUN_PATH: /app/config/allowlist.packages.bun
+    volumes:
+      - ./config:/app/config:ro
+      - ./migrations:/app/migrations:ro
+      - ${NVM_DIR:-/tmp/nvm-placeholder}:${NVM_DIR:-/tmp/nvm-placeholder}:ro
+      - ${CLAUDE_SHARE_DIR:-/tmp}:/opt/claude-share:ro
+      - ${DOCKER_SOCKET_PATH:-/run/user/1000/docker.sock}:/run/user/1000/docker.sock:ro
+      - aster-host-uv-cache:/root/.cache/uv
+      - aster-host-npm-cache:/root/.npm
+      - aster-host-npx-cache:/root/.cache/npx
+      - aster-host-bun-cache:/root/.bun
+      - aster-host-logs:/app/logs
+      - ./sources:/app/host/sources
+    ports:
+      - "8080:8080"
+    networks:
+      - aster-net
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >
+          node -e "fetch('http://localhost:8080/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1));"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  webui:
+    container_name: aster-webui
+    image: aster-webui
+    restart: unless-stopped
+    build:
+      context: webui
+      dockerfile: Dockerfile.webui
+      args:
+        VITE_HOST_API_URL: ${VITE_HOST_API_URL:-http://localhost:8080}
+        VITE_PROMPT_OPTIMIZER_CHAIN_ID: ${VITE_PROMPT_OPTIMIZER_CHAIN_ID:-}
+        GIT_HASH: ${GIT_HASH:-}
+    depends_on:
+      host:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+    networks:
+      - aster-net
+    volumes:
+      - aster-webui-node-modules:/app/node_modules
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >
+          node -e "fetch('http://localhost:5173').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1));"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+volumes:
+  aster-db-data:
+  aster-host-uv-cache:
+  aster-host-npm-cache:
+  aster-host-npx-cache:
+  aster-host-bun-cache:
+  aster-host-logs:
+  aster-webui-node-modules:
+
+networks:
+  aster-net:
