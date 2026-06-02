@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Discussion
+    url: https://github.com/daksh777f/Aster/discussions
+    about: Use Discussions for questions, not Issues
+  - name: Documentation
+    url: https://docs.github.com/daksh777f/Aster
+    about: Check the documentation first

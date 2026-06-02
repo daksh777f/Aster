@@ -1,0 +1,75 @@
+FROM node:20-bookworm AS base
+# Docker CLI und PostgreSQL Client 16
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl gnupg git build-essential && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/keyrings/postgresql.gpg && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt/ bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+    chmod a+r /etc/apt/keyrings/docker.gpg && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" > /etc/apt/sources.list.d/docker.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends docker-ce-cli postgresql-client-16 && \
+    # Puppeteer/Chrome dependencies — needed for markdown2pdf-mcp running as npx subprocess.
+    apt-get install -y --no-install-recommends \
+    libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+    libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    libgbm1 libpango-1.0-0 libcairo2 libasound2 libxshmfence1 \
+    fonts-liberation xdg-utils && \
+    rm -rf /var/lib/apt/lists/*
+# Install into /usr/local/bin (world-readable/executable) instead of /root/.local/bin
+# (drwx------) — the host process runs as the unprivileged "node" user (uid 1000)
+# and needs to invoke `uv run` for PEP-723 inline-dependency skill scripts.
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
+# Python 3.13 für postgres-mcp (erfordert >=3.12, Basis-Image hat nur 3.11)
+RUN uv python install 3.13
+# Optional MCP servers (nextcloud-mcp-server, markdown2pdf-mcp, …) are NOT
+# baked into the image: that couples every build to PyPI/npm availability and
+# fails on network problems. Instead, the first uvx/npx start downloads at
+# runtime into the volume-mounted caches (/root/.cache/uv, /root/.cache/npx) —
+# pre-warm with scripts/warmup-mcp.sh, see docs/{de,en}/admin/mcp-server/01_basics.md.
+ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
+# Source NVM from mounted host path so CLI tools (claude, gemini) are found in login shells
+RUN echo 'export NVM_DIR="/home/rock/.nvm"' >> /root/.profile && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /root/.profile
+# Claude Code CLI wrapper — resolves latest version from host-mounted share dir (/opt/claude-share)
+RUN printf '#!/bin/sh\n_v=$(ls /opt/claude-share/versions 2>/dev/null | sort -rV | head -1)\n[ -z "$_v" ] && { echo "claude: not available (CLAUDE_SHARE_DIR not mounted)" >&2; exit 127; }\nexec "/opt/claude-share/versions/$_v" "$@"\n' \
+    > /usr/local/bin/claude && chmod +x /usr/local/bin/claude
+# bun ships without a separate `bunx` binary (modern bun detects argv[0] == "bunx" and
+# behaves like `bun x`); add the expected alias as a symlink. Resolves lazily, so this
+# also works on deployments that bind-mount a `bun` binary over /usr/local/bin/bun at runtime.
+RUN ln -sf /usr/local/bin/bun /usr/local/bin/bunx
+# Pre-create cache/config dirs under /home/node owned by the "node" user (uid 1000).
+# Deployments that run the container as a non-root user (e.g. user: "1000:1000" for
+# rootless Docker) mount named volumes at these paths; Docker initializes a volume's
+# content from the image directory it shadows, so having node:node ownership here
+# ensures the volume starts out node-writable instead of root-owned (which would
+# otherwise cause EACCES for npm/npx/bun/gemini/claude running as "node").
+RUN mkdir -p /home/node/.npm /home/node/.cache/npx /home/node/.cache/uv \
+             /home/node/.bun /home/node/.gemini /home/node/.claude && \
+    chown -R node:node /home/node
+WORKDIR /app
+
+FROM base AS deps
+WORKDIR /app/host
+COPY host/package.json host/package-lock.json ./
+RUN npm ci
+
+FROM deps AS build
+WORKDIR /app/host
+COPY host/tsconfig.json ./
+COPY host/src ./src
+COPY contracts ../contracts
+RUN npm run build
+
+FROM base AS prod
+WORKDIR /app/host
+ENV NODE_ENV=production
+ENV TZ=Europe/Berlin
+COPY host/package.json host/package-lock.json ./
+RUN npm ci --omit=dev
+COPY contracts ../contracts
+COPY --from=build /app/host/dist ./dist
+COPY host/mcp-servers ./mcp-servers
+EXPOSE 8080
+CMD ["node", "dist/index.js"]
