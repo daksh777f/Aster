@@ -1,0 +1,105 @@
+# Aster Documentation
+
+> Aster is a self-hosted, open-source AI agent platform (AGPL-3.0). It connects language models with external tools via the Model Context Protocol (MCP), provides persistent vector memory, multi-agent orchestration, and a visual chain designer — all running exclusively on your own infrastructure.
+
+Aster turns isolated language models into integrated, action-capable assistants. A master planner analyzes complex requests, breaks them into subtasks, and delegates them to specialized agents. Each agent has its own tools, decision logic, and persistent memory. All data stays on-premise.
+
+Core capabilities: multi-agent orchestration with A2A delegation (up to 5 levels deep), MCP server integration (Docker-isolated), long-term vector memory (pgvector), visual chain/workflow designer, scheduled automation (cron), Agent Skills (open agentskills.io standard — compatible with Claude Code, GitHub Copilot, Cursor), multi-tenancy with RBAC and Row-Level Security.
+
+Tech stack: Node.js/TypeScript backend (Fastify), React/TypeScript frontend, PostgreSQL + pgvector, rootless Docker for MCP server isolation.
+
+## Getting Started
+- [Introduction](./en/getting-started/01_introduction.md): What is Aster, core principles, use cases, architecture overview
+- [Installation](./en/getting-started/02_installation.md): Server setup in under 30 minutes
+- [Compatible MCP Servers](./en/getting-started/03_compatible-mcp-servers.md): Supported MCP servers and integration patterns
+- [Compatible AI Providers](./en/getting-started/04_compatible-providers.md): Supported LLM providers (Claude, gpt-5.4, Gemini, Ollama, Mistral, ...)
+
+## Admin: MCP Servers
+- [Basics](./en/admin/mcp-server/01_basics.md): What MCP servers are and how Aster uses them
+- [Configuration](./en/admin/mcp-server/02_configuration.md): JSON config format, STDIO vs. HTTP, secret-ref pattern, Docker images and rootless daemon
+- [Lifecycle](./en/admin/mcp-server/03_lifecycle.md): Server start, stop, autostart behavior
+- [Security](./en/admin/mcp-server/04_security.md): Container isolation, capability restrictions, allowlists
+- [Monitoring](./en/admin/mcp-server/05_monitoring.md): Status, logs, diagnostics
+
+## Admin: Agents
+- [Concept](./en/admin/agents/01_concept.md): What agents are, master planner vs. specialist agents
+- [Creation](./en/admin/agents/02_creation.md): How to define and configure agents
+- [Access and Visibility](./en/admin/agents/03_access_and_visibility.md): Public, user-specific, private agents
+- [Capabilities](./en/admin/agents/04_capabilities.md): Tools, memory access, system prompt
+- [Agent Delegation (A2A)](./en/admin/agents/05_agent_delegation.md): Agent-to-agent delegation, delegation depth, context passing
+
+## Admin: Agent Skills
+- [Concept](./en/admin/skills/01_concept.md): What skills are, progressive disclosure, two skill classes, available tools
+- [Management](./en/admin/skills/02_management.md): Installation, agent assignment, scope/permissions, API reference
+
+## Admin: Chain Engine (Workflows)
+- [Concept](./en/admin/chains/01_concept.md): What chains are and when to use them
+- [Management](./en/admin/chains/02_management.md): Create, edit, delete chains
+- [Chain Designer](./en/admin/chains/03_designer.md): Visual workflow designer
+- [Logic and Data Flow](./en/admin/chains/04_logic_and_data_flow.md): Step inputs/outputs, branching
+- [Engine Specification](./en/admin/chains/05_engine_specification.md): Technical chain execution details
+- [Agent-Chain Binding](./en/admin/chains/06_agent_chain_binding.md): Connecting agents and chains
+
+## Admin: AI Providers
+- [Concept](./en/admin/ai-provider/01_concept.md): Provider model, API key management
+- [Configuration](./en/admin/ai-provider/02_configuration.md): Adding and managing providers
+- [Models](./en/admin/ai-provider/03_models.md): Model selection and defaults
+- [Diagnostics](./en/admin/ai-provider/04_diagnostics.md): Provider health checks
+- [CLI Provider](./en/admin/ai-provider/05_cli_provider.md): Local CLI-based AI tools (Gemini CLI, Claude Code)
+- [Embedding](./en/admin/ai-provider/06_embedding.md): Embedding models for vector memory
+
+## Admin: Memory & Audit
+- [Context and Memory Flow](./en/admin/memory_audit/00_context_and_memory_flow.md): How memory is retrieved and written during agent runs
+- [Architecture](./en/admin/memory_audit/01_architecture.md): Namespace structure, pgvector, RLS
+- [Permissions](./en/admin/memory_audit/02_permissions.md): Who can read/write which namespaces
+- [Policies and Templates](./en/admin/memory_audit/03_policies_and_templates.md): Memory policies per agent
+- [Best Practices](./en/admin/memory_audit/04_best_practices.md): Namespace design, TTL, cleanup
+- [Admin Tools](./en/admin/memory_audit/05_admin_tools.md): Memory browser, manual operations
+- [Ranking Algorithm](./en/admin/memory_audit/10_ranking_algorithm.md): How relevant memories are scored and selected
+
+## Admin: Scheduled Tasks
+- [Concept](./en/admin/tasks/01_concept.md): Cron-based automation
+- [Configuration](./en/admin/tasks/02_configuration.md): Cron syntax, agent/chain targets
+- [Control](./en/admin/tasks/03_control.md): Enable, disable, run manually
+- [Memory Integration](./en/admin/tasks/04_memory_integration.md): Persistent state across scheduled runs
+
+## Security
+- [Security Concept](./en/security/01_security_concept.md): Defense-in-depth architecture overview
+- [Allowlists](./en/security/02_allowlists.md): Docker image, npm, pypi, bun allowlists
+- [Auth Baseline](./en/security/03_auth-baseline.md): Session management, password policy
+- [RBAC](./en/security/05_rbac.md): Role-based access control, admin vs. user
+- [Secrets](./en/security/06_secrets.md): Secret-ref pattern, environment variable resolution
+
+## Configuration
+- [Environment Variables](./en/configuration/01_environment_variables.md): All .env settings documented
+- [Backup and Restore](./en/configuration/02_backup_and_restore.md): Database and volume backup
+- [Update](./en/configuration/03_update.md): How to update Aster
+- [Reverse Proxy](./en/configuration/04_reverse_proxy.md): nginx/Caddy setup with TLS
+- [API Reference](./en/configuration/05_api_reference.md): Internal API endpoints
+- [Multi-Instance](./en/configuration/06_multi_instance.md): Running multiple Aster instances
+
+## API
+- [API Reference](./en/api/01_api-ref.md): REST API endpoints for external integrations
+- [Dry Run](./en/api/02_dry_run.md): Test agent and chain execution without side effects
+
+## Automation
+- [Overview](./en/automation/01_overview.md): Automation capabilities, webhooks, triggers
+
+## Observability
+- [Logging](./en/observability/01_logging.md): Log levels, log files, structured logging
+
+## User Guide
+- [Interface Overview](./en/user/general/01_interface.md): Main UI areas
+- [Chat](./en/user/chat/01_overview.md): Starting and managing chats
+- [Composer](./en/user/chat/02_composer.md): Message input, attachments, agent selection
+- [Trace Panel](./en/user/chat/05_trace_panel.md): Inspect agent reasoning and tool calls
+- [Keyboard Shortcuts](./en/user/01_keyboard_shortcuts.md): Full shortcut reference
+
+## Optional
+- [User Management](./en/admin/user-management/01_roles_and_permissions.md): User roles and permission matrix
+- [System Status](./en/admin/info/01_system_status.md): Health dashboard
+- [Memory Audit Reference](./en/admin/memory_audit/07_audit_reference.md): Audit log format and fields
+- [Namespace Rules Details](./en/admin/memory_audit/08_namespace_rules_details.md): Advanced namespace configuration
+- [DB Rollback](./en/db/01_rollback.md): Database migration rollback procedures
+- [CSP Template](./en/security/04_csp-template.md): Content Security Policy configuration
+- [WebUI Navigation Reference](./en/webui_navi/01_overview.md): Complete UI navigation map
