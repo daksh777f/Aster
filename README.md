@@ -52,28 +52,28 @@ Aster divides processing, execution, and data storage into distinct layers.
 
 ```mermaid
 graph TD
-    User([User Client]) -->|HTTPS| WebUI["WebUI (React SPA)"]
+    User(["User Client"]) -->|HTTPS| WebUI["WebUI (React SPA)"]
     WebUI -->|REST / SSE| Host["Host Server (Node.js / Fastify)"]
-    Host -->|Row-Level Security Guard| DB[(PostgreSQL + pgvector)]
+    Host -->|Row-Level Security Guard| DB[("PostgreSQL + pgvector")]
     
     subgraph Storage & Context
-        DB -->|RAG| Context[Long-term Memory / Vector Store]
+        DB -->|RAG| Context["Long-term Memory / Vector Store"]
         Context -->|Inject| Host
     end
     
     subgraph AI Coordination
-        Host -->|Orchestrate| Planner[Master Planner Agent]
-        Planner -->|API Request| LLM[LLM Providers (Claude, GPT, Ollama)]
+        Host -->|Orchestrate| Planner["Master Planner Agent"]
+        Planner -->|API Request| LLM["LLM Providers (Claude, GPT, Ollama)"]
         LLM -->|Response| Planner
-        Planner -->|A2A Delegation| SubAgent[Specialist Agent]
+        Planner -->|A2A Delegation| SubAgent["Specialist Agent"]
     end
     
     subgraph Safe Execution Sandbox
-        SubAgent -->|Call Tool| MCP[MCP Orchestrator]
+        SubAgent -->|Call Tool| MCP["MCP Orchestrator"]
         Planner -->|Call Tool| MCP
-        MCP -->|Spawn/Access| Docker[Rootless Docker Daemon]
-        Docker -->|Isolate| Env1[MCP Server: Local Filesystem]
-        Docker -->|Isolate| Env2[MCP Server: Search Engine]
+        MCP -->|Spawn/Access| Docker["Rootless Docker Daemon"]
+        Docker -->|Isolate| Env1["MCP Server: Local Filesystem"]
+        Docker -->|Isolate| Env2["MCP Server: Search Engine"]
     end
     
     Env1 -->|JSON Output| Host
@@ -118,15 +118,6 @@ sequenceDiagram
 * **Agent Skills (Open Standard):** Compatible with the `agentskills.io` standard. Write reusable scripts, or use the **built-in Skill Creator** to construct, lint, and validate new skills interactively directly inside the chat.
 * **Automated Cron Scheduling:** Run agent tasks or chains on a schedule (e.g. daily reports, system health checks) with optional chat continuation.
 * **Strict Privacy Policy:** Hardcoded database separation ensures that administrators can never view user chats or modify private memory without explicit user opt-in.
-
----
-
-## Screenshots
-
-| Chat & Agents | MCP Tools in Action |
-|---|---|
-|![Chat](https://github.com/daksh777f/Aster/screenshots/aster_chat_en.png) | ![MCP](https://github.com/daksh777f/Aster/screenshots/aster_exa_en.png) |
-| *Self-hosted Multi-Agent dialogue.* | *Exa search -> PDF summary -> email - in a single run.* |
 
 ---
 
@@ -189,18 +180,18 @@ Once running, visit **`http://localhost:5173`** in your browser to log in and st
 
 For step-by-step guides, configuration settings, and administrator consoles, please refer to the files in the local [docs](./docs/README.md) directory:
 
-| Topic | English Manual | German Manual |
-|---|---|---|
-| Introduction | [EN](./docs/en/getting-started/01_introduction.md) | [DE](./docs/de/getting-started/01_introduction.md) |
-| Installation Guide | [EN](./docs/en/getting-started/02_installation.md) | [DE](./docs/de/getting-started/02_installation.md) |
-| Environment Variables Reference | [EN](./docs/en/configuration/01_environment_variables.md) | [DE](./docs/de/configuration/01_environment_variables.md) |
-| Agent Concepts | [EN](./docs/en/admin/agents/01_concept.md) | [DE](./docs/de/admin/agents/01_concept.md) |
-| Custom Agent Skills | [EN](./docs/en/admin/skills/01_concept.md) | [DE](./docs/de/admin/skills/01_concept.md) |
-| Visual Chain Engine | [EN](./docs/en/admin/chains/01_concept.md) | [DE](./docs/de/admin/chains/01_concept.md) |
-| Vector Memory & RAG | [EN](./docs/en/admin/memory_audit/01_architecture.md) | [DE](./docs/de/admin/memory_audit/01_architecture.md) |
-| Security Architecture | [EN](./docs/en/security/01_security_concept.md) | [DE](./docs/de/security/01_security_concept.md) |
-| Cron Automations | [EN](./docs/en/automation/01_overview.md) | [DE](./docs/de/automation/01_overview.md) |
-| API Endpoints | [EN](./docs/en/api/01_api-ref.md) | [DE](./docs/de/api/01_api-ref.md) |
+| Topic | English Manual |
+|---|---|
+| Introduction | [EN](./docs/en/getting-started/01_introduction.md) |
+| Installation Guide | [EN](./docs/en/getting-started/02_installation.md) |
+| Environment Variables Reference | [EN](./docs/en/configuration/01_environment_variables.md) |
+| Agent Concepts | [EN](./docs/en/admin/agents/01_concept.md) |
+| Custom Agent Skills | [EN](./docs/en/admin/skills/01_concept.md) |
+| Visual Chain Engine | [EN](./docs/en/admin/chains/01_concept.md) |
+| Vector Memory & RAG | [EN](./docs/en/admin/memory_audit/01_architecture.md) |
+| Security Architecture | [EN](./docs/en/security/01_security_concept.md) |
+| Cron Automations | [EN](./docs/en/automation/01_overview.md) |
+| API Endpoints | [EN](./docs/en/api/01_api-ref.md) |
 
 ---
 
@@ -212,8 +203,6 @@ Aster is dual-licensed:
 
 For licensing inquiries or community help:
 * **Repository:** https://github.com/daksh777f/Aster
-* **Discussions:** https://github.com/daksh777f/Aster/discussions
-
 ---
 
 Copyright (c) 2026 Daksh Goel - https://github.com/daksh777f/. All rights reserved.
