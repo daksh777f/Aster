@@ -77,3 +77,20 @@ __pycache__/
 venv/
 ENV/
 .pytest_cache/
+
+# Secrets
+.env.*
+!.env.example
+*.key
+
+# Node
+dist/
+build/
+.next/
+out/
+.vercel/
+npm-debug.log*
+yarn-error.log*
+
+# Python
+.ipynb_checkpoints/
